@@ -7,6 +7,7 @@
 % (optional) Projects dynamic ISC - behavior correlation to MNI space for visualization
 
 % Input:  story = 'paranoia' or 'sherlock;
+%         wsize = one of [32,40,48] for 'paranoia', one of [24,30,36] for 'sherlock'
 %         thres = 0.05; % uncorrected significance threshold for
 %         non-parametric permutation statistical test
 
@@ -18,6 +19,17 @@
 
 function [results, dynISC] = dynISC(story, wsize, thres)
 path = fileparts(fileparts(pwd)); % 2 steps parent directory
+
+if nargin < 2
+    if strcmp(story,'paranoia')
+        wsize = 40;
+    elseif strcmp(story,'sherlock')
+        wsize = 30;
+    end
+    thres = 0.05;
+elseif nargin < 3
+    thres = 0.05; % default 0.05
+end
 
 % load BOLD timecourse of all participants
 load([path,'/data/fmri-BOLD-',story,'.mat']);
@@ -45,6 +57,7 @@ end
 %% Load all subjects' sliding windowed time series
 % tcwin: (nT-wsize) x nT x nR
 % data saved per participant
+disp(' ');
 disp('Create sliding window time series');
 for subj = 1:nsubj
     disp(['  subj ',num2str(subj),' / ',num2str(nsubj)]);
@@ -53,7 +66,7 @@ for subj = 1:nsubj
     if any(isnan(ts(:,1)))
         nT_subj = length(find(~isnan(ts(:,1))));
         nanid = find(isnan(ts(:,1)));
-        disp('  ******* due to sherlock s05 timeseries having NaN, temporarily erase NaN from timeseries');
+        disp('  ******* due to fMRI timeseries having NaN, temporarily erase NaN from timeseries');
         ts = ts(find(~isnan(ts(:,1))),:);
     end
     
@@ -113,11 +126,11 @@ for subj = 1:nsubj
     
     save([savepath,'/tcwin',num2str(subj),'.mat'],'tcwin','-v7.3');
 end
-disp(' ');
 
 %% Pairwise
 % sliding window applied dynamic ISC: (nT-wsize) x ROI
 % data saved per participant pair
+disp(' ');
 disp('Pairwise dynamic ISC calculation');
 idx = 0;
 for subj1 = 1:nsubj-1
